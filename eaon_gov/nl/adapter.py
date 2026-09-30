@@ -1,6 +1,7 @@
 import re
 import unicodedata
 from eaon_gov.nl.intent import IntentEnvelope, IntentValidationError, Provenance
+from eaon_gov.nl.spans import SpanClassifier
 
 class DeterministicNLAdapter:
     """Small, auditable RO/DE/EN parser for the v0.2 relocation experiment."""
@@ -24,7 +25,8 @@ class DeterministicNLAdapter:
             raise IntentValidationError("Input text is empty")
 
         folded = self._fold(text)
-        if not any(marker in folded for marker in self.MOVE_MARKERS):
+        authoritative = self._fold(SpanClassifier().authoritative_text(text))
+        if not any(marker in authoritative for marker in self.MOVE_MARKERS):
             raise IntentValidationError("No supported life event detected")
 
         patterns = (
@@ -37,14 +39,14 @@ class DeterministicNLAdapter:
             raise IntentValidationError("Relocation detected but origin/destination are ambiguous")
 
         origin, destination = map(self._clean_place, match.groups())
-        false_hits = [marker for marker in self.VEHICLE_FALSE if marker in folded]
-        polarity_text = folded
+        false_hits = [marker for marker in self.VEHICLE_FALSE if marker in authoritative]
+        polarity_text = authoritative
         for marker in sorted(false_hits, key=len, reverse=True):
             polarity_text = polarity_text.replace(marker, " ")
         true_hits = [marker for marker in self.VEHICLE_TRUE if marker in polarity_text]
         if true_hits and false_hits:
             raise IntentValidationError("Contradictory vehicle ownership evidence")
-        if any(marker in folded for marker in self.INJECTION_MARKERS):
+        if any(marker in authoritative for marker in self.INJECTION_MARKERS):
             raise IntentValidationError("Instruction-like state manipulation is not trusted evidence")
 
         context = {}
