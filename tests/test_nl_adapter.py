@@ -27,3 +27,15 @@ def test_envelope_converts_to_core_scenario():
     scenario = env.to_scenario("nl-001", text)
     assert scenario["parsed_intent"]["event"] == "relocation"
     assert scenario["context_data"]["vehicle_owner"] is True
+
+
+def test_fingerprint_is_stable_and_provenance_is_direct():
+    text = "M-am mutat din Landsberg în Göttingen și am o mașină."
+    first = DeterministicNLAdapter().parse(text)
+    second = DeterministicNLAdapter().parse(text)
+    assert first.fingerprint() == second.fingerprint()
+    proof = first.provenance["vehicle_owner"]
+    assert proof.source == "user_input"
+    assert proof.evidence == "am o masina"
+    assert proof.inferred is False
+    assert first.to_dict()["schema_fingerprint"] == first.fingerprint()
