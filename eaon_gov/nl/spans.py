@@ -15,14 +15,14 @@ class SpanClassifier:
     QUOTE_PAIRS = {'"': '"', '«': '»', '„': '”', '“': '”'}
     REPORTED_PATTERNS = (
         re.compile(r"\bmy friend told me to\b", re.IGNORECASE),
-        re.compile(r"\bprietenul meu a zis sa\b", re.IGNORECASE),
+        re.compile(r"\bprietenul meu a zis s[ăa]\b", re.IGNORECASE),
         re.compile(r"\bmein freund sagte,? ich soll\b", re.IGNORECASE),
     )
     AUTHORITY_RESETS = (
-        re.compile(r"\\bbut\\b", re.IGNORECASE),
-        re.compile(r"\\bdar\\b", re.IGNORECASE),
-        re.compile(r"\\binsa\\b|\\bînsă\\b", re.IGNORECASE),
-        re.compile(r"\\baber\\b", re.IGNORECASE),
+        re.compile(r"\bbut\b", re.IGNORECASE),
+        re.compile(r"\bdar\b", re.IGNORECASE),
+        re.compile(r"\binsa\b|\bînsă\b", re.IGNORECASE),
+        re.compile(r"\baber\b", re.IGNORECASE),
     )
 
     def _reported_start(self, text: str, start: int) -> int | None:
