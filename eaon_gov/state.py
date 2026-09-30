@@ -3,33 +3,49 @@ import json
 from pathlib import Path
 
 class StateManager:
-    def __init__(self, trace_id: str, audit_path: str = "telemetry/audit.jsonl"):
-        self.trace_id = trace_id
+    def __init__(self, scenario_data: dict, audit_path: str = "telemetry/audit.jsonl"):
+        self.scenario_data = scenario_data
+        self.scenario_id = scenario_data.get("scenario_id", "unknown")
+        self.intent = scenario_data.get("parsed_intent", {})
+        self.event = self.intent.get("event")
+        self.jurisdiction = self.intent.get("jurisdiction")
         self.audit_path = Path(audit_path)
         self.audit_path.parent.mkdir(parents=True, exist_ok=True)
-        self.state = {
-            "trace_id": trace_id,
-            "event": None,
-            "jurisdiction": None,
-            "services": {},
-            "claims": [],
-            "execution_status": "INITIALIZED"
+        self.services = {}
+        self.claims = []
+        self.execution_status = "INITIALIZED"
+
+    @staticmethod
+    def derive_trace_id(scenario_data: dict) -> str:
+        canonical = json.dumps(scenario_data, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+        return "gov-trace-" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+
+    def set_service_state(self, service, decision, verification="PENDING", missing=None):
+        self.services[service] = {"decision": decision, "verification": verification}
+        if missing:
+            self.services[service]["missing"] = missing
+
+    def add_claim_audit(self, record):
+        self.claims.append(record)
+
+    def get_canonical_state(self):
+        return {
+            "event": self.event,
+            "jurisdiction": self.jurisdiction,
+            "services": self.services,
+            "claims": sorted(self.claims, key=lambda x: x.get("rule_id", "")),
+            "execution_status": self.execution_status,
         }
 
-    def update_intent(self, event: str, jurisdiction: str):
-        self.state["event"] = event
-        self.state["jurisdiction"] = jurisdiction
+    def compute_state_hash(self):
+        canonical = json.dumps(self.get_canonical_state(), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
-    def set_service(self, service: str, data: dict):
-        self.state["services"][service] = data
+    def finalize(self, status):
+        self.execution_status = status
+        return self.get_canonical_state()
 
-    def add_claim(self, claim: dict):
-        self.state["claims"].append(claim)
+    def write_audit(self, trace_id):
+        record = {"trace_id": trace_id, "scenario_id": self.scenario_id, "state_hash": self.compute_state_hash(), **self.get_canonical_state()}
         with self.audit_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps({"trace_id": self.trace_id, **claim}, ensure_ascii=False, sort_keys=True) + "\n")
-
-    def finalize(self, status: str):
-        self.state["execution_status"] = status
-        canonical = json.dumps(self.state, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        self.state["state_hash"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-        return self.state
+            f.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
