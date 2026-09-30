@@ -37,7 +37,11 @@ class DeterministicNLAdapter:
             raise IntentValidationError("Relocation detected but origin/destination are ambiguous")
 
         origin, destination = map(self._clean_place, match.groups())
-        false_hits = [marker for marker in self.VEHICLE_FALSE if marker in folded]\n        polarity_text = folded\n        for marker in sorted(false_hits, key=len, reverse=True):\n            polarity_text = polarity_text.replace(marker, \" \" )\n        true_hits = [marker for marker in self.VEHICLE_TRUE if marker in polarity_text]
+        false_hits = [marker for marker in self.VEHICLE_FALSE if marker in folded]
+        polarity_text = folded
+        for marker in sorted(false_hits, key=len, reverse=True):
+            polarity_text = polarity_text.replace(marker, " ")
+        true_hits = [marker for marker in self.VEHICLE_TRUE if marker in polarity_text]
         if true_hits and false_hits:
             raise IntentValidationError("Contradictory vehicle ownership evidence")
         if any(marker in folded for marker in self.INJECTION_MARKERS):
