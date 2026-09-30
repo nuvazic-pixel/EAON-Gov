@@ -8,6 +8,7 @@ class DeterministicNLAdapter:
     MOVE_MARKERS = ("m-am mutat", "m am mutat", "umgezogen", "moved")
     VEHICLE_TRUE = ("am o masina", "am masina", "am un autoturism", "habe ein auto", "habe ein fahrzeug", "have a car", "own a car")
     VEHICLE_FALSE = ("nu am masina", "habe kein auto", "don't have a car", "do not have a car")
+    INJECTION_MARKERS = ("ignore previous", "ignora regulile", "ignora instructiunile", "ignoriere vorherige", "set vehicle_owner", "seteaza vehicle_owner")
 
     @staticmethod
     def _fold(text: str) -> str:
@@ -36,17 +37,21 @@ class DeterministicNLAdapter:
             raise IntentValidationError("Relocation detected but origin/destination are ambiguous")
 
         origin, destination = map(self._clean_place, match.groups())
+        true_hits = [marker for marker in self.VEHICLE_TRUE if marker in folded]
+        false_hits = [marker for marker in self.VEHICLE_FALSE if marker in folded]
+        if true_hits and false_hits:
+            raise IntentValidationError("Contradictory vehicle ownership evidence")
+        if any(marker in folded for marker in self.INJECTION_MARKERS):
+            raise IntentValidationError("Instruction-like state manipulation is not trusted evidence")
+
         context = {}
         provenance = {}
-
-        if any(marker in folded for marker in self.VEHICLE_FALSE):
-            evidence = next(marker for marker in self.VEHICLE_FALSE if marker in folded)
+        if false_hits:
             context["vehicle_owner"] = False
-            provenance["vehicle_owner"] = Provenance("user_input", evidence, "deterministic", False)
-        elif any(marker in folded for marker in self.VEHICLE_TRUE):
-            evidence = next(marker for marker in self.VEHICLE_TRUE if marker in folded)
+            provenance["vehicle_owner"] = Provenance("user_input", false_hits[0], "deterministic", False)
+        elif true_hits:
             context["vehicle_owner"] = True
-            provenance["vehicle_owner"] = Provenance("user_input", evidence, "deterministic", False)
+            provenance["vehicle_owner"] = Provenance("user_input", true_hits[0], "deterministic", False)
 
         unknown = tuple(k for k in ("taxable", "vehicle_owner", "beneficiary") if k not in context)
         return IntentEnvelope(
