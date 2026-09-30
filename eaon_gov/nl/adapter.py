@@ -37,10 +37,16 @@ class DeterministicNLAdapter:
 
         origin, destination = map(self._clean_place, match.groups())
         context = {}
+        provenance = {}
+
         if any(marker in folded for marker in self.VEHICLE_FALSE):
+            evidence = next(marker for marker in self.VEHICLE_FALSE if marker in folded)
             context["vehicle_owner"] = False
+            provenance["vehicle_owner"] = Provenance("user_input", evidence, "deterministic", False)
         elif any(marker in folded for marker in self.VEHICLE_TRUE):
+            evidence = next(marker for marker in self.VEHICLE_TRUE if marker in folded)
             context["vehicle_owner"] = True
+            provenance["vehicle_owner"] = Provenance("user_input", evidence, "deterministic", False)
 
         unknown = tuple(k for k in ("taxable", "vehicle_owner", "beneficiary") if k not in context)
         return IntentEnvelope(
