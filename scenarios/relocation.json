@@ -1,0 +1,10 @@
+{
+  "scenario_id": "scenario-umzug-01",
+  "input_text": "M-am mutat din Landsberg în Göttingen. Ce trebuie să fac?",
+  "parsed_intent": {
+    "event": "relocation",
+    "jurisdiction": "DE",
+    "origin": "Landsberg",
+    "destination": "Göttingen"
+  }
+}
