@@ -13,5 +13,9 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest>=8.0.0"]
 
+[tool.setuptools.packages.find]
+include = ["eaon_gov*"]
+exclude = ["services*", "scenarios*", "tests*", "telemetry*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
