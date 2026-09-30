@@ -1,6 +1,6 @@
 import re
 import unicodedata
-from eaon_gov.nl.intent import IntentEnvelope, IntentValidationError
+from eaon_gov.nl.intent import IntentEnvelope, IntentValidationError, Provenance
 
 class DeterministicNLAdapter:
     """Small, auditable RO/DE/EN parser for the v0.2 relocation experiment."""
@@ -46,6 +46,6 @@ class DeterministicNLAdapter:
         return IntentEnvelope(
             schema_version="0.2", event="relocation", jurisdiction="DE",
             entities={"origin": origin.title(), "destination": destination.title()},
-            context=context, unknown_fields=unknown,
+            context=context, provenance=provenance, unknown_fields=unknown,
             parser_mode="deterministic", confidence=1.0,
         ).validate()
