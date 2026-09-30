@@ -18,6 +18,12 @@ class SpanClassifier:
         re.compile(r"\bprietenul meu a zis sa\b", re.IGNORECASE),
         re.compile(r"\bmein freund sagte,? ich soll\b", re.IGNORECASE),
     )
+    AUTHORITY_RESETS = (
+        re.compile(r"\\bbut\\b", re.IGNORECASE),
+        re.compile(r"\\bdar\\b", re.IGNORECASE),
+        re.compile(r"\\binsa\\b|\\bînsă\\b", re.IGNORECASE),
+        re.compile(r"\\baber\\b", re.IGNORECASE),
+    )
 
     def _reported_start(self, text: str, start: int) -> int | None:
         matches = [m.start() for pattern in self.REPORTED_PATTERNS if (m := pattern.search(text, start))]
@@ -40,8 +46,15 @@ class SpanClassifier:
                 spans.append(TextSpan(text[buffer_start:boundary], buffer_start, boundary, True, "direct"))
 
             if reported_at is not None and boundary == reported_at:
-                end = len(text)
+                resets = [m for pattern in self.AUTHORITY_RESETS if (m := pattern.search(text, reported_at))]
+                reset = min(resets, key=lambda m: m.start()) if resets else None
+                end = reset.start() if reset else len(text)
                 spans.append(TextSpan(text[reported_at:end], reported_at, end, False, "reported"))
+                if reset:
+                    spans.append(TextSpan(text[reset.start():reset.end()], reset.start(), reset.end(), False, "authority_reset"))
+                    buffer_start = reset.end()
+                    i = reset.end()
+                    continue
                 buffer_start = end
                 i = end
                 break
