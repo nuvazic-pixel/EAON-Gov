@@ -27,16 +27,11 @@ class DeterministicNLAdapter:
             raise IntentValidationError("No supported life event detected")
 
         patterns = (
-            r"(?:m-am mutat|m am mutat) din\s+(.+?)\s+(?:in|în)\s+(.+?)(?:\s+si\s+|[.!?]|$)",
-            r"(?:ich bin )?von\s+(.+?)\s+nach\s+(.+?)(?:\s+und\s+|[.!?]|$)",
-            r"(?:i )?moved from\s+(.+?)\s+to\s+(.+?)(?:\s+and\s+|[.!?]|$)",
+            r"(?:m-am mutat|m am mutat) din\s+(.+?)\s+in\s+(.+?)(?=\s+si\s+|[.!?]|$)",
+            r"(?:ich bin )?von\s+(.+?)\s+nach\s+(.+?)(?=\s+umgezogen(?:\s+und|[.!?]|$)|\s+und\s+|[.!?]|$)",
+            r"(?:i )?moved from\s+(.+?)\s+to\s+(.+?)(?=\s+and\s+|[.!?]|$)",
         )
-        match = None
-        normalized = folded
-        for pattern in patterns:
-            match = re.search(pattern, normalized, flags=re.IGNORECASE)
-            if match:
-                break
+        match = next((m for p in patterns if (m := re.search(p, folded, flags=re.IGNORECASE))), None)
         if not match:
             raise IntentValidationError("Relocation detected but origin/destination are ambiguous")
 
