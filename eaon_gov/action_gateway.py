@@ -1,7 +1,9 @@
 class ActionGateway:
-    def execute_action(self, agent_name: str, action: str, decision: str) -> dict:
+    def execute_action(self, agent_name: str, action: str, decision: str, claim_verification: str) -> dict:
+        if decision == "PASS" and claim_verification == "CLAIM_VERIFIED":
+            return {"status": "SUCCESS", "execution": "SIMULATED", "agent": agent_name, "action": action}
         if decision == "NEEDS_INPUT":
-            return {"status": "NOT_EXECUTED", "execution": "NONE"}
-        if decision != "PASS":
-            return {"status": "BLOCKED", "execution": "SIMULATION_DENIED"}
-        return {"status": "SUCCESS", "execution": "SIMULATED"}
+            return {"status": "BLOCKED", "execution": "NOT_EXECUTED", "agent": agent_name, "action": action}
+        if decision == "SKIPPED":
+            return {"status": "SKIPPED", "execution": "NOT_EXECUTED", "agent": agent_name, "action": action}
+        return {"status": "DENIED", "execution": "BLOCKED", "agent": agent_name, "action": action}
