@@ -1,5 +1,5 @@
-import json
-from pathlib import Path
+from eaon_gov.resources import load_json_path, load_json_resource
+from eaon_gov.validation import validate_scenario
 from eaon_gov.state import StateManager
 from eaon_gov.policy import PolicyEngine
 from eaon_gov.verifier import ClaimVerifier, ExecutionVerifier
@@ -10,8 +10,8 @@ from eaon_gov.agents.fahrzeug import FahrzeugAgent
 from eaon_gov.agents.familienkasse import FamilienkasseAgent
 
 class GovOrchestrator:
-    def __init__(self, services_path="services/germany.json", audit_path="telemetry/audit.jsonl"):
-        self.services_config = json.loads(Path(services_path).read_text(encoding="utf-8"))
+    def __init__(self, services_path=None, audit_path="telemetry/audit.jsonl"):
+        self.services_config = load_json_resource("services", "germany.json") if services_path is None else load_json_path(services_path)
         self.audit_path = audit_path
         self.policy = PolicyEngine(self.services_config)
         self.claim_verifier = ClaimVerifier()
@@ -19,8 +19,9 @@ class GovOrchestrator:
         self.gateway = ActionGateway()
         self.agents = [BuergeramtAgent(), FinanzamtAgent(), FahrzeugAgent(), FamilienkasseAgent()]
 
-    def run_scenario(self, scenario_path: str):
-        scenario = json.loads(Path(scenario_path).read_text(encoding="utf-8"))
+    def run_scenario(self, scenario_path: str | None = None):
+        scenario = load_json_resource("scenarios", "relocation.json") if scenario_path is None else load_json_path(scenario_path)
+        validate_scenario(scenario)
         state = StateManager(scenario, self.audit_path)
         trace_id = state.derive_trace_id(scenario)
         context = scenario.get("context_data", {})

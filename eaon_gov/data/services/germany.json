@@ -1,0 +1,16 @@
+{
+  "jurisdiction": "DE",
+  "life_events": {
+    "relocation": {
+      "description": "Moving residence from one municipality to another within Germany",
+      "required_services": ["residence_registration", "tax_address", "vehicle_registration"],
+      "optional_services": ["family_services"]
+    }
+  },
+  "rules": {
+    "DE-UMZUG-001": {"service": "residence_registration", "target_agent": "buergeramt", "condition": "always_required", "deadline_days": 14},
+    "DE-UMZUG-002": {"service": "tax_address", "target_agent": "finanzamt", "condition": "evaluate_if_taxable", "requires": ["taxable"]},
+    "DE-UMZUG-003": {"service": "vehicle_registration", "target_agent": "fahrzeug", "condition": "evaluate_if_vehicle_owner", "requires": ["vehicle_owner"]},
+    "DE-UMZUG-004": {"service": "family_services", "target_agent": "familienkasse", "condition": "evaluate_if_beneficiary", "requires": ["beneficiary"]}
+  }
+}

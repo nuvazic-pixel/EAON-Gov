@@ -19,3 +19,6 @@ exclude = ["services*", "scenarios*", "tests*", "telemetry*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+eaon_gov = ["data/services/*.json", "data/scenarios/*.json"]
