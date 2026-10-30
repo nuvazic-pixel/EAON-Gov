@@ -24,7 +24,6 @@ class DeterministicNLAdapter:
         if not isinstance(text, str) or not text.strip():
             raise IntentValidationError("Input text is empty")
 
-        folded = self._fold(text)
         authoritative = self._fold(SpanClassifier().authoritative_text(text))
         if not any(marker in authoritative for marker in self.MOVE_MARKERS):
             raise IntentValidationError("No supported life event detected")
@@ -34,11 +33,11 @@ class DeterministicNLAdapter:
             r"(?:ich bin )?von\s+(.+?)\s+nach\s+(.+?)(?=\s+umgezogen(?:\s+und|[.!?]|$)|\s+und\s+|[.!?]|$)",
             r"(?:i )?moved from\s+(.+?)\s+to\s+(.+?)(?=\s+and\s+|[.!?]|$)",
         )
-        match = next((m for p in patterns if (m := re.search(p, folded, flags=re.IGNORECASE))), None)
-        if not match:
+        matches = [match for pattern in patterns for match in re.finditer(pattern, authoritative, flags=re.IGNORECASE)]
+        if len(matches) != 1:
             raise IntentValidationError("Relocation detected but origin/destination are ambiguous")
 
-        origin, destination = map(self._clean_place, match.groups())
+        origin, destination = map(self._clean_place, matches[0].groups())
         false_hits = [marker for marker in self.VEHICLE_FALSE if marker in authoritative]
         polarity_text = authoritative
         for marker in sorted(false_hits, key=len, reverse=True):
